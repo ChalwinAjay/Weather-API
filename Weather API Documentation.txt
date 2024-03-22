@@ -1,0 +1,358 @@
+1.improve responsiveness (css grid)(fleixable)  
+2.filter(server side)
+3.pagenation
+4.two way binding
+5.the ways i can edit the data grid
+
+
+WeatherGrid
+
+import React, { useState } from 'react';
+import { Button, FormControl, InputLabel, MenuItem, Select } from '@mui/material'; // Import Material-UI components
+import { DataGrid } from '@mui/x-data-grid'; // Import DataGrid
+import axios from 'axios';
+
+const WeatherGrid = () => {
+  const [selectedCity, setSelectedCity] = useState('');
+  const [weatherData, setWeatherData] = useState([]);
+
+  const handleChange = async (event) => {
+    const city = event.target.value;
+    setSelectedCity(city);
+  };
+
+  const handleShowWeather = async () => {
+    try {
+      const response = await axios.get('http://localhost:3000/weather', { params: { city: selectedCity } });
+      setWeatherData(response.data);
+    } catch (error) {
+      console.error('Error fetching weather data:', error);
+    }
+  };
+
+  const getRowId = (row) => row.id; // Function to specify custom ID for each row
+
+  const columns = [
+    { field: 'city', headerName: 'City', width: 150 },
+    { field: 'temperature', headerName: 'Temperature (°C)', width: 200 },
+    { field: 'condition', headerName: 'Condition', width: 150 },
+  ];
+
+  return (
+    <div className="weather-grid">
+     <h2 style={{ color: 'black' }}>Select a city:</h2>
+      <FormControl variant="outlined" className="city-select">
+        <InputLabel id="city-select-label" style={{ color: 'black' }}>City</InputLabel>
+        <Select
+          labelId="city-select-label"
+          id="city-select"
+          value={selectedCity}
+          onChange={handleChange}
+          label="City"
+          style={{ color: 'black' }}
+        >
+          <MenuItem value="london">London</MenuItem>
+          <MenuItem value="newyork">New York</MenuItem>
+        </Select>
+      </FormControl>
+      <Button variant="contained" onClick={handleShowWeather} disabled={!selectedCity}>Show Weather</Button>
+      {weatherData && (
+        <div style={{ height: 400, width: '100%' }}>
+          <DataGrid
+            rows={weatherData}
+            columns={columns}
+            getRowId={getRowId} // Set custom ID for each row
+            pageSize={5}
+            pageSizeOptions={[5, 10, 25, 50, 100]}
+            style={{ backgroundColor: 'white' }}
+          />
+        </div>
+      )}
+    </div>
+  );
+};
+
+export default WeatherGrid;
+
+
+
+Server Code
+
+const express = require('express');
+const cors = require('cors');
+const app = express();
+const port = 3000;
+app.use(cors());
+
+// Function to generate mock weather data
+function generateWeatherData(city, count) {
+  const data = [];
+  for (let i = 0; i < count; i++) {
+    data.push({
+      city: city.charAt(0).toUpperCase() + city.slice(1),
+      temperature: Math.floor(Math.random() * 30) + 10,
+      condition: Math.random() > 0.5 ? 'Sunny' : 'Cloudy'
+    });
+  }
+  return data;
+}
+
+// Mock weather data for London and New York
+const weatherData = {
+  london: generateWeatherData('london', 10),
+  newyork: generateWeatherData('newyork', 10)
+};
+
+// Route to get weather data based on city
+app.get('/weather', (req, res) => {
+  const { city } = req.query;
+  const selectedCity = city && city.toLowerCase();
+
+  if (selectedCity && weatherData[selectedCity]) {
+    res.json(weatherData[selectedCity]);
+  } else {
+    res.status(404).json({ error: 'Weather data not found for the selected city' });
+  }
+});
+
+// Start the server
+app.listen(port, () => {
+  console.log(`Server is running on http://localhost:${port}`);
+});
+
+
+ResponsiveHeader
+
+import React, { useState } from 'react';
+import styled from 'styled-components';
+import logo from './logo.png';
+import { Drawer, List, ListItem, ListItemText, Button as MuiButton } from '@mui/material';
+import InboxIcon from '@mui/icons-material/Inbox';
+import StarIcon from '@mui/icons-material/Star';
+import SendIcon from '@mui/icons-material/Send';
+import DraftsIcon from '@mui/icons-material/Drafts';
+import MailIcon from '@mui/icons-material/Mail';
+import DeleteIcon from '@mui/icons-material/Delete';
+import ReportIcon from '@mui/icons-material/Report';
+import MenuIcon from '@mui/icons-material/Menu';
+import { Grid } from '@mui/material';
+
+
+const Header = styled.header`
+  position: fixed;
+  top: 0;
+  left: 0;
+  right: 0;
+  z-index: 100;
+  display: flex;
+  justify-content: space-around;
+  align-items: center;
+  padding: 20px;
+  background-color: #000000;
+  width: 100%;
+`;
+
+const Nav = styled.nav`
+  display: flex;
+  gap: 30px;
+`;
+
+const NavLink = styled.a`
+  text-decoration: none;
+  color: white;
+`;
+
+const SearchBar = styled.input.attrs({ type: 'search' })`
+  margin-left: 20px;
+  padding: 5px;
+`;
+
+const Button = styled.button`
+  background-color: #4CAF50; /* Green */
+  border: none;
+  color: white;
+  padding: 15px 32px;
+  text-align: center;
+  text-decoration: none;
+  display: inline-block;
+  font-size: 16px;
+  margin: 4px 2px;
+  cursor: pointer;
+`;
+
+const ResponsiveHeader = () => {
+  const [isSignedIn, setIsSignedIn] = useState(false);
+  const [isDrawerOpen, setIsDrawerOpen] = useState(false);
+
+  const handleDrawerToggle = () => {
+    setIsDrawerOpen(!isDrawerOpen);
+  };
+
+  return (
+    <Header>
+      <Grid container row spacing={1}>
+        <Grid item xs={2} sm={1} md={1}>
+          <MenuIcon htmlColor="white" onClick={handleDrawerToggle} />
+        </Grid>
+        <Grid item xs={10} sm={3} md={2}>
+          <img src={logo} alt="YourLogo" style={{ width: '100px', height: '50px' }} onClick={handleDrawerToggle} />
+        </Grid>
+        <Grid item xs={12} sm={1} md={1}>
+          <Nav>
+            <NavLink href="#home">Home</NavLink>
+          </Nav>
+        </Grid>
+        <Grid item xs={12} sm={1} md={1}>
+          <Nav>
+            <NavLink href="#contact">Contact</NavLink>
+          </Nav>
+        </Grid>
+        <Grid item xs={12} sm={1} md={1}>
+          <Nav>
+            <NavLink href="#about">About</NavLink>
+          </Nav>
+        </Grid>
+        <Grid item xs={12} sm={1} md={1}>
+          <Nav>
+            <NavLink href="#profile">Profile</NavLink>
+          </Nav>
+        </Grid>
+        <Grid item xs={12} sm={3} md={3}>
+          <SearchBar placeholder="Search..." />
+        </Grid> 
+        <Grid item xs={12} sm={1} md={2}>
+          {!isSignedIn ? (
+            <Button onClick={() => setIsSignedIn(true)}>Sign In</Button>
+          ) : (
+            <Button onClick={() => setIsSignedIn(false)}>Sign Out</Button>
+          )}
+        </Grid>
+      </Grid>
+<Drawer
+  variant="temporary"
+  open={isDrawerOpen}
+  onClose={handleDrawerToggle}
+  PaperProps={{ 
+    style: { 
+      backgroundColor: '#000', // Set drawer background color to black
+      marginTop: '90px' ,// Set top margin equal to the height of the Header
+      top: '5px',
+      width: '250px'
+    } 
+  }}
+>
+  <List>
+    <ListItem button>
+      <InboxIcon htmlColor="white"/>
+      <ListItemText primary="Inbox" style={{ color: '#fff' }} />
+    </ListItem>
+    <ListItem button>
+      <StarIcon htmlColor="white"/>
+      <ListItemText primary="Starred" style={{ color: '#fff' }} />
+    </ListItem>
+    <ListItem button>
+      <SendIcon htmlColor="white"/>
+      <ListItemText primary="Send mail" style={{ color: '#fff' }} />
+    </ListItem>
+    <ListItem button>
+      <DraftsIcon htmlColor="white"/>
+      <ListItemText primary="Drafts" style={{ color: '#fff' }} />
+    </ListItem>
+    <ListItem button>
+      <MailIcon htmlColor="white"/>
+      <ListItemText primary="All mail" style={{ color: '#fff' }} />
+    </ListItem>
+    <ListItem button>
+      <DeleteIcon htmlColor="white"/>
+      <ListItemText primary="Trash" style={{ color: '#fff' }} />
+    </ListItem>
+    <ListItem button>
+      <ReportIcon htmlColor="white"/>
+      <ListItemText primary="Spam" style={{ color: '#fff' }} />
+    </ListItem>
+  </List>
+</Drawer>
+
+    </Header>
+  );
+};
+
+export default ResponsiveHeader;
+
+Footer
+
+import React from 'react';
+import { Grid } from '@mui/material';
+
+const footerStyle = {
+  position: 'fixed',
+  left: '0',
+  bottom: '0',
+  width: '100%',
+  backgroundColor: '#f8f9fa',
+  color: 'black',
+  padding: '8px 0',
+  textAlign: 'center',
+};
+
+function Footer() {
+  return (
+    <Grid container>
+      <Grid item xs={12} sm={6} md={4}>
+        <div style={footerStyle}>
+          <p>
+            Copyright © 2024 Weather api | Privacy Policy | Terms of Service
+          </p>
+        </div>
+      </Grid>
+    </Grid>
+  );
+}
+
+export default Footer;
+
+App
+
+import * as React from "react";
+import { BrowserRouter as Router, Routes, Route } from "react-router-dom";
+import WeatherGrid from './assets/WeatherGrid';
+import ResponsiveHeader from './ResponsiveHeader';
+import Footer from './footer';
+
+const App = () => (
+  <>
+    <ResponsiveHeader />
+    <Footer />
+    <Router>
+      <Routes>
+        <Route path="/weather" element={<WeatherGrid />} />
+        <Route path="/weather/:city" element={<WeatherGrid />} />
+        <Route path="/" element={<WeatherGrid />} />
+      </Routes>
+    </Router>
+  </>
+);
+
+export default App;
+
+Main
+
+import React from 'react';
+import { createRoot } from 'react-dom/client'; // Import createRoot from 'react-dom'
+import App from './App';
+import './index.css';
+
+const root = document.getElementById('root');
+const rootRoot = createRoot(root); // Create a root using createRoot
+
+rootRoot.render(
+  <React.StrictMode>
+    <App />
+  </React.StrictMode>
+);
+
+
+
+
+
+
